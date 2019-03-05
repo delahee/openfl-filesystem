@@ -24,6 +24,7 @@ class FileStream{
 			case READ:
 				try{
 					input = sys.io.File.read(f.nativePath, true);
+					input.seek(0, sys.io.FileSeek.SeekBegin ); //?
 				}catch ( d:Dynamic ){
 					throw new openfl.errors.IOError("No such file");
 				}
@@ -38,6 +39,7 @@ class FileStream{
 			case APPEND:
 				try{
 					output = sys.io.File.append(f.nativePath, true);
+					output.seek(0, sys.io.FileSeek.SeekBegin ); //?
 				}catch ( d:Dynamic ){
 					throw new openfl.errors.IOError("No such file");
 				}
@@ -53,11 +55,12 @@ class FileStream{
 		if (output!=null) output.close();
 	}
 	
-	public function readUTFBytes(len : UInt){
+	public function readUTFBytes(len : UInt) : String {
 		if ( input == null) throw new openfl.errors.IOError("File is not opened");
 		
 		var rem = get_bytesAvailable();
-		if ( rem < len ) throw new openfl.errors.EOFError ("File is not opened");
+		trace("rem bytes : "+rem+" asked:"+len);
+		if ( rem < len ) throw new openfl.errors.EOFError ("Eof encountered");
 		var b = input.read(len);
 		return b.toString();
 	}
@@ -77,7 +80,9 @@ class FileStream{
 	public function writeBytes(ba:openfl.utils.ByteArray, offset : UInt = 0, length:UInt = 0) : Void {
 		if ( output == null) throw new openfl.errors.IOError("File is not opened for writing");
 		
-		var written = output.writeBytes( ba, offset,length );
+		var written = output.writeBytes( ba, offset, length );
+		
+		@:privateAccess fdesc.__update();
 	}
 	
 	/**
@@ -87,6 +92,8 @@ class FileStream{
 		if ( output == null) throw new openfl.errors.IOError("File is not opened for writing");
 		var bytes = haxe.io.Bytes.ofString(value);
 		var written = output.writeBytes( bytes, 0, bytes.length );
+		
+		@:privateAccess fdesc.__update();
 	}
 	
 	/**
@@ -96,41 +103,32 @@ class FileStream{
 		if ( output == null) throw new openfl.errors.IOError("File is not opened for writing");
 		var bytes = haxe.io.Bytes.ofString(value);
 		var written = output.writeBytes( bytes, 0, bytes.length );
+		@:privateAccess fdesc.__update();
+		
 	}
 	
 	//////////////Private
 	function get_bytesAvailable(){
-		if ( input != null ) get_size() - input.tell();
-		if ( output != null ) get_size() - output.tell();
-		return 0;
+		return get_size()-getCurrentPos();
 	}
 	
 	/////////////private
-	var inputSize : Null<Int> = null;
-	var outputSize : Null<Int> = null;
 	function get_size(){
 		if ( input != null){
-			if ( inputSize != null ) return inputSize;
-			
 			var pos = getCurrentPos();
 			input.seek( 0, sys.io.FileSeek.SeekEnd );
 			var lsize = input.tell();
 			input.seek( pos, sys.io.FileSeek.SeekBegin );
-			inputSize = lsize;
 			return lsize;
 		}
 		
 		if ( output != null){
-			if ( outputSize != null ) return outputSize;
-			
 			var pos = getCurrentPos();
 			output.seek( 0, sys.io.FileSeek.SeekEnd );
 			var lsize = output.tell();
 			output.seek( pos, sys.io.FileSeek.SeekBegin );
-			outputSize = lsize;
 			return lsize;
 		}
-		
 		return 0;
 	}
 	

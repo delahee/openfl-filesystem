@@ -1,5 +1,6 @@
 package openfl.filesystem;
 
+using StringTools;
 #if !sys
 	#error("Does not support non sys compatible targets ")
 #end
@@ -16,6 +17,14 @@ class File extends openfl.net.FileReference {
 	public function new( ?path:String )	{
 		super();
 		this.__path = path;
+		
+		var fileInfo = sys.FileSystem.stat (path);
+		if( fileInfo!=null){
+			creationDate = fileInfo.ctime;
+			modificationDate = fileInfo.mtime;
+			size = fileInfo.size;
+			type = "." + haxe.io.Path.extension(path);
+		}
 	}
 	
 	public function createDirectory(){
@@ -30,8 +39,23 @@ class File extends openfl.net.FileReference {
 		sys.FileSystem.deleteDirectory( nativePath );
 	}
 	
+	public function getDirectoryListing() : Array<File>{
+		return sys.FileSystem.readDirectory(nativePath).map( function(path) return resolvePath(path) );
+	}
+	
 	public function get_absolutePath():String{
 		return sys.FileSystem.absolutePath( nativePath );
+	}
+	
+	public function deleteFileAsync(){
+		#if !cpp
+		sys.FileSystem.deleteFile( nativePath);
+		#else 
+		var path = nativePath;
+		cpp.vm.Thread.create(function(){
+			sys.FileSystem.deleteFile( path );
+		});
+		#end
 	}
 
 	/**
@@ -72,10 +96,29 @@ class File extends openfl.net.FileReference {
 		return sys.FileSystem.isDirectory( nativePath );
 	}
 	
-	function getDirectoryListing() : Array<File>{
-		return sys.FileSystem.readDirectory(nativePath).map( function(path) return new File(path));
+	
+	
+	function __update(){
+		var fileInfo = sys.FileSystem.stat(__path);
+		if( fileInfo!=null){
+			creationDate = fileInfo.ctime;
+			modificationDate = fileInfo.mtime;
+			size = fileInfo.size;
+			type = "." + haxe.io.Path.extension(__path);
+		}
 	}
 	
+	public static inline var sep = {
+		#if windows
+		"\\";
+		#else 
+		"/";
+		#end
+	}
+	
+	public function resolvePath(path:String) : File {
+		return new File( nativePath + sep + path);
+	}
 	
 	
 }
