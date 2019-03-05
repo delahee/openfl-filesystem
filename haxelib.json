@@ -1,0 +1,10 @@
+{
+  "name": "openfl-filesystem",
+  "url": "http://github.com/delahee/openfl-filesystem",
+  "license": "MIT",
+  "tags": [ ],
+  "description": "",
+  "version": "0.0.1",
+  "releasenote": "Initial release",
+  "contributors": [ "delahee" ]
+}
