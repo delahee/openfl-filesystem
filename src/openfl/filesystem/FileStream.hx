@@ -12,7 +12,7 @@ class FileStream{
 	public var bytesAvailable( get, null) : UInt;
 	public var size(get, null): UInt;
 	
-	public function new( ){ }
+	public inline function new( ){ }
 	
 	public function open(f : openfl.filesystem.File, mode:FileMode){
 		this.mode = mode;
@@ -60,7 +60,8 @@ class FileStream{
 		if ( input == null) throw new openfl.errors.IOError("File is not opened");
 		
 		var rem = get_bytesAvailable();
-		trace("rem bytes : "+rem+" asked:"+len);
+		trace("rem bytes : " + rem + " asked:" + len);
+		
 		if ( rem < len ) throw new openfl.errors.EOFError ("Eof encountered");
 		var b = input.read(len);
 		return b.toString();
@@ -69,13 +70,30 @@ class FileStream{
 	public function readBytes(ba:openfl.utils.ByteArray, offset:UInt=0, length:UInt=0){
 		if ( input == null) throw new openfl.errors.IOError("File is not opened");
 		
-		if ( offset >= 0 )
-			advance(offset);
-		
+		if ( offset >= 0 ) advance(offset);
 		var rem = get_bytesAvailable();
+		if ( length == 0 ) length = rem;
+		
+		
 		if ( rem < length ) throw new openfl.errors.EOFError ("File is not opened");
+		
+		#if debug trace("tasked to read "+length); #end
 		var b = input.read(length);
-		return openfl.utils.ByteArray.fromBytes( b );
+		
+		#if debug 
+		trace("extracted " + b.length);
+		#end
+		
+		var nba = openfl.utils.ByteArray.fromBytes( b );
+		
+		ba.writeBytes( nba );
+		
+		#if debug 
+		trace("assigned by file " + nba.length);
+		trace("assigned to output" + ba.length);
+		#end
+		
+		return ba;
 	}
 	
 	public function writeBytes(ba:openfl.utils.ByteArray, offset : UInt = 0, length:UInt = 0) : Void {

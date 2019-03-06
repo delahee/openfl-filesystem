@@ -27,6 +27,8 @@ class File extends openfl.net.FileReference {
 	}
 	
 	function normalize(){
+		if ( __path == null ) return;
+		
 		if( sep == "/" )  __path = __path.replace("\\", sep);
 		if( sep == "\\" ) __path = __path.replace("/", sep);
 		
@@ -49,7 +51,17 @@ class File extends openfl.net.FileReference {
 	}
 	
 	public function getDirectoryListing() : Array<File>{
-		return sys.FileSystem.readDirectory(nativePath).map( function(path) return resolvePath(path) );
+		if ( __path == null ){
+			//#if debug trace("path is empy"); #end
+			return [];
+		}
+		if ( !isDirectory ){
+			//#if debug trace("not a dir"); #end
+			return [];
+		}
+		var dirs = sys.FileSystem.readDirectory(nativePath);
+		if ( dirs == null ) return [];
+		return dirs.map( function(path) return resolvePath(path) );
 	}
 	
 	public function get_absolutePath():String{
@@ -74,7 +86,8 @@ class File extends openfl.net.FileReference {
 	}
 	
 	public function resolvePath(path:String) : File {
-		return new File( nativePath + sep + path);
+		//if native path is a dir, it has a trailing slash
+		return new File( nativePath + path);
 	}
 	
 
@@ -105,21 +118,12 @@ class File extends openfl.net.FileReference {
 	function get_url() return "file:///"+nativePath;
 	
 	function get_exists():Bool{
-		try{
-			var f = sys.io.File.read( nativePath, true );
-			f.close();
-			return true;
-		}
-		catch ( e : Dynamic){
-			return false;
-		}
-		return false;
+		return sys.FileSystem.exists( __path );
 	}
 	
 	function get_isDirectory(){
 		return sys.FileSystem.isDirectory( nativePath );
 	}
-	
 	
 	function __update(){
 		var fileInfo = sys.FileSystem.stat(__path);
