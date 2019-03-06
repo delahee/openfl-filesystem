@@ -1,8 +1,5 @@
 package openfl.filesystem;
 
-#if !sys
-	#error("Does not support non sys compatible targets ")
-#end
 
 class FileStream{
 	/////////////private
@@ -52,7 +49,11 @@ class FileStream{
 	
 	public function close(){
 		if (input!=null) input.close();
-		if (output!=null) output.close();
+		if (output != null) output.close();
+		
+		//invalid any r/w ops
+		input = null;
+		output = null;
 	}
 	
 	public function readUTFBytes(len : UInt) : String {
@@ -81,6 +82,14 @@ class FileStream{
 		if ( output == null) throw new openfl.errors.IOError("File is not opened for writing");
 		
 		var written = output.writeBytes( ba, offset, length );
+		
+		@:privateAccess fdesc.__update();
+	}
+	
+	public function writeByte(value:Int):Void{
+		if ( output == null) throw new openfl.errors.IOError("File is not opened for writing");
+		
+		output.writeByte(value);
 		
 		@:privateAccess fdesc.__update();
 	}

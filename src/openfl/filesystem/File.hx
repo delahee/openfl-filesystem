@@ -1,9 +1,6 @@
 package openfl.filesystem;
 
 using StringTools;
-#if !sys
-	#error("Does not support non sys compatible targets ")
-#end
 
 class File extends openfl.net.FileReference {
 	
@@ -17,13 +14,25 @@ class File extends openfl.net.FileReference {
 	public function new( ?path:String )	{
 		super();
 		this.__path = path;
+		normalize();
 		
-		var fileInfo = sys.FileSystem.stat (path);
+		var fileInfo = sys.FileSystem.stat(__path);
 		if( fileInfo!=null){
 			creationDate = fileInfo.ctime;
 			modificationDate = fileInfo.mtime;
 			size = fileInfo.size;
-			type = "." + haxe.io.Path.extension(path);
+			type = "." + haxe.io.Path.extension(__path);
+		}
+		
+	}
+	
+	function normalize(){
+		if( sep == "/" )  __path = __path.replace("\\", sep);
+		if( sep == "\\" ) __path = __path.replace("/", sep);
+		
+		if ( isDirectory ){
+			if ( __path.charCodeAt(  __path.length - 1 ) != sep.charCodeAt(0) )
+				__path = __path + sep;
 		}
 	}
 	
@@ -47,6 +56,12 @@ class File extends openfl.net.FileReference {
 		return sys.FileSystem.absolutePath( nativePath );
 	}
 	
+	//todo test
+	public function deleteFile(){
+		sys.FileSystem.deleteFile( nativePath);
+	}
+	
+	//todo test
 	public function deleteFileAsync(){
 		#if !cpp
 		sys.FileSystem.deleteFile( nativePath);
@@ -57,6 +72,11 @@ class File extends openfl.net.FileReference {
 		});
 		#end
 	}
+	
+	public function resolvePath(path:String) : File {
+		return new File( nativePath + sep + path);
+	}
+	
 
 	/**
 	 * Could setup a handler ?
@@ -75,7 +95,11 @@ class File extends openfl.net.FileReference {
 	public function browseForOpen(hint:String, filters : Array<Dynamic> ){
 		throw "[browseForOpen]not implemented";
 	}
-		
+	
+	public function browseForDirectory(hint:String){
+		throw "[browseForDirectory]not implemented";
+	}
+	
 	//////////////////////////////private
 	function get_nativePath() return __path;
 	function get_url() return "file:///"+nativePath;
@@ -97,7 +121,6 @@ class File extends openfl.net.FileReference {
 	}
 	
 	
-	
 	function __update(){
 		var fileInfo = sys.FileSystem.stat(__path);
 		if( fileInfo!=null){
@@ -116,9 +139,11 @@ class File extends openfl.net.FileReference {
 		#end
 	}
 	
-	public function resolvePath(path:String) : File {
-		return new File( nativePath + sep + path);
+	override function toString(){
+		return "[Object File __path:" + __path+"]";
 	}
+	
+	
 	
 	
 }
