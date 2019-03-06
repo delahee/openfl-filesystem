@@ -60,7 +60,6 @@ class FileStream{
 		if ( input == null) throw new openfl.errors.IOError("File is not opened");
 		
 		var rem = get_bytesAvailable();
-		trace("rem bytes : " + rem + " asked:" + len);
 		
 		if ( rem < len ) throw new openfl.errors.EOFError ("Eof encountered");
 		var b = input.read(len);
@@ -77,21 +76,14 @@ class FileStream{
 		
 		if ( rem < length ) throw new openfl.errors.EOFError ("File is not opened");
 		
-		#if debug trace("tasked to read "+length); #end
+		//#if debug trace("tasked to read "+length); #end
 		var b = input.read(length);
 		
-		#if debug 
-		trace("extracted " + b.length);
-		#end
+		//#if debug  trace("extracted " + b.length); #end
 		
 		var nba = openfl.utils.ByteArray.fromBytes( b );
 		
 		ba.writeBytes( nba );
-		
-		#if debug 
-		trace("assigned by file " + nba.length);
-		trace("assigned to output" + ba.length);
-		#end
 		
 		return ba;
 	}
