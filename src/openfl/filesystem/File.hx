@@ -11,9 +11,23 @@ class File extends openfl.net.FileReference {
 	public var nativePath( get, null ) : String;
 	public var url( get, null ):String;
 	
+	//////////////////////////////public statics
+	//public static var applicationDirectory : File = new File(lime.system.System.applicationDirectory);
+	//public static var applicationStorageDirectory:File = new File(lime.system.System.applicationStorageDirectory);
+		
+	public static var applicationDirectory : File = null;
+	public static var applicationStorageDirectory:File = null;
+		
 	public function new( ?path:String )	{
 		super();
+		
+		staticInit();
+		
 		this.__path = path;
+		
+		//happens with "empty" constructor invocation
+		if ( path == "" ) return;
+		
 		normalize();
 		
 		var fileInfo = sys.FileSystem.stat(__path);
@@ -24,6 +38,16 @@ class File extends openfl.net.FileReference {
 			type = "." + haxe.io.Path.extension(__path);
 		}
 		
+	}
+	
+	function staticInit(){
+		if ( applicationDirectory == null){
+			#if debug
+			trace("File::StaticInit");
+			#end
+			applicationDirectory = new File(lime.system.System.applicationDirectory);
+			applicationStorageDirectory = new File(lime.system.System.applicationStorageDirectory);
+		}
 	}
 	
 	function normalize(){
@@ -98,12 +122,7 @@ class File extends openfl.net.FileReference {
 		throw "[openWithDefaultApplication]not implemented";
 	}
 	
-	//////////////////////////////public statics
-	public static var applicationDirectory :File = 
-		new File(lime.system.System.applicationDirectory);
 	
-	public static var applicationStorageDirectory:File = 
-		new File(lime.system.System.applicationStorageDirectory);
 		
 	public function browseForOpen(hint:String, filters : Array<Dynamic> ){
 		throw "[browseForOpen]not implemented";

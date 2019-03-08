@@ -21,7 +21,6 @@ class FileStream{
 			case READ:
 				try{
 					input = sys.io.File.read(f.nativePath, true);
-					input.seek(0, sys.io.FileSeek.SeekBegin ); //?
 				}catch ( d:Dynamic ){
 					throw new openfl.errors.IOError("No such file");
 				}
@@ -36,7 +35,6 @@ class FileStream{
 			case APPEND:
 				try{
 					output = sys.io.File.append(f.nativePath, true);
-					output.seek(0, sys.io.FileSeek.SeekBegin ); //?
 				}catch ( d:Dynamic ){
 					throw new openfl.errors.IOError("No such file");
 				}
