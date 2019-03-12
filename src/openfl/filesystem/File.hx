@@ -2,6 +2,7 @@ package openfl.filesystem;
 
 using StringTools;
 
+@:allow( openfl.filesystem.FileStream )
 class File extends openfl.net.FileReference {
 	
 	//public
@@ -15,18 +16,21 @@ class File extends openfl.net.FileReference {
 	//public static var applicationDirectory : File = new File(lime.system.System.applicationDirectory);
 	//public static var applicationStorageDirectory:File = new File(lime.system.System.applicationStorageDirectory);
 		
+	static var __isInit = false;
 	public static var applicationDirectory : File = null;
 	public static var applicationStorageDirectory:File = null;
 		
 	public function new( ?path:String )	{
 		super();
 		
-		staticInit();
-		
+		trace("File::new File "+path);
 		this.__path = path;
 		
 		//happens with "empty" constructor invocation
 		if ( path == "" ) return;
+		#if switch
+		if ( path == "rom:/" ) return;
+		#end
 		
 		normalize();
 		
@@ -40,13 +44,44 @@ class File extends openfl.net.FileReference {
 		
 	}
 	
-	function staticInit(){
-		if ( applicationDirectory == null){
-			#if debug
-			trace("File::StaticInit");
+	static var _ : Dynamic = {
+		#if console
+			#if debug 
+			trace("static init called deferred");
 			#end
-			applicationDirectory = new File(lime.system.System.applicationDirectory);
-			applicationStorageDirectory = new File(lime.system.System.applicationStorageDirectory);
+			haxe.Timer.delay( staticInit, 1 );
+		#else 
+			#if debug 
+			trace("static init called direct");
+			#end
+			staticInit();	
+		#end
+		
+		null;
+	}
+	
+	static function __rawDir( path:String ){
+		var f = new File("");
+		f.__path = path;
+		if ( f.__path == null ) f.__path = "";
+		if( sep == "/" )  f.__path = f.__path.replace("\\", sep);
+		if ( sep == "\\" ) f.__path = f.__path.replace("/", sep);
+		
+		if ( f.__path.endsWith(sep))
+			f.__path += sep;
+		f.isDirectory = true;
+			
+		return f;
+	}
+	
+	static function staticInit(){//do not call isDirectory within here
+		if ( !__isInit ){
+			//#if debug
+			trace("File::StaticInit");
+			//#end
+			__isInit = true;
+			applicationDirectory = __rawDir(lime.system.System.applicationDirectory);
+			//applicationStorageDirectory = __rawDir(lime.system.System.applicationStorageDirectory);
 		}
 	}
 	
@@ -75,6 +110,7 @@ class File extends openfl.net.FileReference {
 	}
 	
 	public function getDirectoryListing() : Array<File>{
+		//#if debug trace("getDirectoryListing "+getOSPath()); #end
 		if ( __path == null ){
 			//#if debug trace("path is empy"); #end
 			return [];
@@ -83,8 +119,10 @@ class File extends openfl.net.FileReference {
 			//#if debug trace("not a dir"); #end
 			return [];
 		}
-		var dirs = sys.FileSystem.readDirectory(nativePath);
+		var dirs = sys.FileSystem.readDirectory(getOSPath());
 		if ( dirs == null ) return [];
+		
+		//#if debug trace("iterating"); #end
 		return dirs.map( function(path) return resolvePath(path) );
 	}
 	
@@ -134,23 +172,38 @@ class File extends openfl.net.FileReference {
 	
 	//////////////////////////////private
 	function get_nativePath() return __path;
-	function get_url() return "file:///"+nativePath;
+	function get_url() return "file:///" + nativePath;
+	
+	function getOSPath( forWriting : Bool = false ){
+		#if switch
+		if ( __path.startsWith("rom:/"))
+			return __path;
+		else 
+			return "rom://" + __path;
+		#else 
+			return __path;
+		#end
+	}
 	
 	function get_exists():Bool{
-		return sys.FileSystem.exists( __path );
+		return sys.FileSystem.exists( getOSPath() );
 	}
 	
 	function get_isDirectory(){
-		return sys.FileSystem.isDirectory( nativePath );
+		#if switch 
+		if ( nativePath == "rom://") return true;
+		#end
+		
+		return sys.FileSystem.isDirectory( getOSPath() );
 	}
 	
 	function __update(){
-		var fileInfo = sys.FileSystem.stat(__path);
+		var fileInfo = sys.FileSystem.stat( getOSPath() );
 		if( fileInfo!=null){
 			creationDate = fileInfo.ctime;
 			modificationDate = fileInfo.mtime;
 			size = fileInfo.size;
-			type = "." + haxe.io.Path.extension(__path);
+			type = "." + haxe.io.Path.extension( getOSPath() );
 		}
 	}
 	

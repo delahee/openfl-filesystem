@@ -1,6 +1,6 @@
 package openfl.filesystem;
 
-
+@:allow( openfl.filesystem.File )
 class FileStream{
 	/////////////private
 	var fdesc : openfl.filesystem.File;
@@ -20,21 +20,22 @@ class FileStream{
 		switch(mode){
 			case READ:
 				try{
-					input = sys.io.File.read(f.nativePath, true);
+					input = sys.io.File.read(f.getOSPath(), true);
 				}catch ( d:Dynamic ){
 					throw new openfl.errors.IOError("No such file");
 				}
 				
 			case WRITE:
 				try{
-					output = sys.io.File.write(f.nativePath, true);
+					output = sys.io.File.write(f.getOSPath(true), true);
 				}catch ( d:Dynamic ){
 					throw new openfl.errors.IOError("No such file");
 				}
 				
 			case APPEND:
 				try{
-					output = sys.io.File.append(f.nativePath, true);
+					output = sys.io.File.append(f.getOSPath(true), true);
+					output.seek( 0, sys.io.FileSeek.SeekEnd );
 				}catch ( d:Dynamic ){
 					throw new openfl.errors.IOError("No such file");
 				}
@@ -76,9 +77,7 @@ class FileStream{
 		
 		//#if debug trace("tasked to read "+length); #end
 		var b = input.read(length);
-		
 		//#if debug  trace("extracted " + b.length); #end
-		
 		var nba = openfl.utils.ByteArray.fromBytes( b );
 		
 		ba.writeBytes( nba );
