@@ -21,7 +21,7 @@ class File extends openfl.net.FileReference {
 	public static var applicationStorageDirectory:File = null;
 		
 	#if switch
-	var protocol :String = null;
+	var protocol : String = null;
 	#end
 	
 	public function new( ?path:String
@@ -45,6 +45,7 @@ class File extends openfl.net.FileReference {
 		if ( path == "" ) return;
 		#if switch
 		if ( path == "rom:/" ) return;
+		if ( path == "save:/" ) return;
 		#end
 		
 		normalize();
@@ -81,7 +82,9 @@ class File extends openfl.net.FileReference {
 	static function __rawDir( path:String ){
 		var f = new File("");
 		f.__path = path;
+		#if switch
 		f.protocol = "";
+		#end
 		
 		if ( f.__path == null ) f.__path = "";
 		if( sep == "/" )  f.__path = f.__path.replace("\\", sep);
@@ -94,7 +97,7 @@ class File extends openfl.net.FileReference {
 		return f;
 	}
 	
-	#if switch
+	#if cpp
 	public static function initStorageDir(){
 		//this call breaks on switch because it invokes profile logic
 		applicationStorageDirectory = __rawDir(lime.system.System.applicationStorageDirectory);
