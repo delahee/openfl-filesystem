@@ -20,8 +20,23 @@ class File extends openfl.net.FileReference {
 	public static var applicationDirectory : File = null;
 	public static var applicationStorageDirectory:File = null;
 		
-	public function new( ?path:String )	{
+	#if switch
+	var protocol :String = null;
+	#end
+	
+	public function new( ?path:String
+		#if switch
+		, ?proto:String 
+		#end
+	)	{
 		super();
+		
+		#if switch
+		protocol = proto;
+		if (protocol == null ){
+			protocol = "rom:/";
+		}
+		#end
 		
 		trace("File::new File "+path);
 		this.__path = path;
@@ -34,6 +49,7 @@ class File extends openfl.net.FileReference {
 		
 		normalize();
 		
+		#if !switch //does not work on switch
 		var fileInfo = sys.FileSystem.stat(__path);
 		if( fileInfo!=null){
 			creationDate = fileInfo.ctime;
@@ -41,7 +57,9 @@ class File extends openfl.net.FileReference {
 			size = fileInfo.size;
 			type = "." + haxe.io.Path.extension(__path);
 		}
-		
+		#else //acquire size
+		__update(null);
+		#end
 	}
 	
 	static var _ : Dynamic = {
@@ -63,6 +81,8 @@ class File extends openfl.net.FileReference {
 	static function __rawDir( path:String ){
 		var f = new File("");
 		f.__path = path;
+		f.protocol = "";
+		
 		if ( f.__path == null ) f.__path = "";
 		if( sep == "/" )  f.__path = f.__path.replace("\\", sep);
 		if ( sep == "\\" ) f.__path = f.__path.replace("/", sep);
@@ -74,14 +94,25 @@ class File extends openfl.net.FileReference {
 		return f;
 	}
 	
+	#if switch
+	public static function initStorageDir(){
+		//this call breaks on switch because it invokes profile logic
+		applicationStorageDirectory = __rawDir(lime.system.System.applicationStorageDirectory);
+	}
+	#end
+	
 	static function staticInit(){//do not call isDirectory within here
 		if ( !__isInit ){
 			//#if debug
-			trace("File::StaticInit");
+			//trace("File::StaticInit");
 			//#end
 			__isInit = true;
 			applicationDirectory = __rawDir(lime.system.System.applicationDirectory);
-			//applicationStorageDirectory = __rawDir(lime.system.System.applicationStorageDirectory);
+			
+			#if !switch
+			//this call breaks on switch because it invokes profile logic
+			applicationStorageDirectory = __rawDir(lime.system.System.applicationStorageDirectory);
+			#end
 		}
 	}
 	
@@ -174,12 +205,12 @@ class File extends openfl.net.FileReference {
 	function get_nativePath() return __path;
 	function get_url() return "file:///" + nativePath;
 	
-	function getOSPath( forWriting : Bool = false ){
+	public function getOSPath(){
 		#if switch
-		if ( __path.startsWith("rom:/"))
-			return __path;
-		else 
-			return "rom://" + __path;
+			if( protocol!=null&&protocol.length>0)
+				return protocol + __path;
+			else 
+				return __path;
 		#else 
 			return __path;
 		#end
@@ -192,12 +223,14 @@ class File extends openfl.net.FileReference {
 	function get_isDirectory(){
 		#if switch 
 		if ( nativePath == "rom://") return true;
+		if ( nativePath == "save://") return true;
 		#end
 		
 		return sys.FileSystem.isDirectory( getOSPath() );
 	}
 	
-	function __update(){
+	function __update( ?fs : openfl.filesystem.FileStream ){
+		#if !switch 
 		var fileInfo = sys.FileSystem.stat( getOSPath() );
 		if( fileInfo!=null){
 			creationDate = fileInfo.ctime;
@@ -205,6 +238,21 @@ class File extends openfl.net.FileReference {
 			size = fileInfo.size;
 			type = "." + haxe.io.Path.extension( getOSPath() );
 		}
+		#else
+		
+		if ( isDirectory ) return;
+		
+		if( fs !=null)
+			size = fs.size;
+		else {
+			var f = new FileStream();
+			if( exists ){
+				f.open(this, READ );
+				size = f.size;
+				f.close();
+			}
+		}
+		#end
 	}
 	
 	public static inline var sep = {
@@ -216,9 +264,19 @@ class File extends openfl.net.FileReference {
 	}
 	
 	override function toString(){
-		return "[Object File __path:" + __path+"]";
+		return "[Object File __path:" + nativePath +"]";
 	}
 	
+	function dumpStats(){
+		var fileInfo = sys.FileSystem.stat( getOSPath() );
+		if ( fileInfo != null){
+			trace("data for " + getOSPath());
+			trace( fileInfo.ctime );
+			trace( fileInfo.mtime );
+			trace( fileInfo.size );
+		}
+	}
+
 	
 	
 	

@@ -1,5 +1,7 @@
 package openfl.filesystem;
 
+using StringTools;
+
 @:allow( openfl.filesystem.File )
 class FileStream{
 	/////////////private
@@ -22,19 +24,28 @@ class FileStream{
 				try{
 					input = sys.io.File.read(f.getOSPath(), true);
 				}catch ( d:Dynamic ){
-					throw new openfl.errors.IOError("No such file");
+					throw new openfl.errors.IOError("No such file "+f.nativePath);
 				}
+				
+				//#if debug
+				//fdesc.dumpStats();
+				//#end
 				
 			case WRITE:
 				try{
-					output = sys.io.File.write(f.getOSPath(true), true);
+					output = sys.io.File.write(f.getOSPath(), true);
 				}catch ( d:Dynamic ){
-					throw new openfl.errors.IOError("No such file");
+					#if debug trace(d); #end
+					throw new openfl.errors.IOError("Unable to open file ");
 				}
+				
+				//#if debug
+				//fdesc.dumpStats();
+				//#end
 				
 			case APPEND:
 				try{
-					output = sys.io.File.append(f.getOSPath(true), true);
+					output = sys.io.File.append(f.getOSPath(), true);
 					output.seek( 0, sys.io.FileSeek.SeekEnd );
 				}catch ( d:Dynamic ){
 					throw new openfl.errors.IOError("No such file");
@@ -50,13 +61,22 @@ class FileStream{
 		if (input!=null) input.close();
 		if (output != null) output.close();
 		
+		#if switch
+		if ( output!=null && fdesc.protocol != null && fdesc.protocol.startsWith( "save:" )){
+			var committed = lime.console.nswitch.SaveData.commit();
+			#if debug
+			trace("NSwitch:Commit! "+committed);
+			#end
+		}
+		#end
+		
 		//invalid any r/w ops
 		input = null;
 		output = null;
 	}
 	
 	public function readUTFBytes(len : UInt) : String {
-		if ( input == null) throw new openfl.errors.IOError("File is not opened");
+		if ( input == null) throw new openfl.errors.IOError("File is not opened for read operations");
 		
 		var rem = get_bytesAvailable();
 		
@@ -66,14 +86,14 @@ class FileStream{
 	}
 	
 	public function readBytes(ba:openfl.utils.ByteArray, offset:UInt=0, length:UInt=0){
-		if ( input == null) throw new openfl.errors.IOError("File is not opened");
+		if ( input == null) throw new openfl.errors.IOError("File is not opened for read operations");
 		
 		if ( offset >= 0 ) advance(offset);
 		var rem = get_bytesAvailable();
 		if ( length == 0 ) length = rem;
 		
 		
-		if ( rem < length ) throw new openfl.errors.EOFError ("File is not opened");
+		if ( rem < length ) throw new openfl.errors.EOFError ("File is not opened for read operations");
 		
 		//#if debug trace("tasked to read "+length); #end
 		var b = input.read(length);
@@ -86,40 +106,43 @@ class FileStream{
 	}
 	
 	public function writeBytes(ba:openfl.utils.ByteArray, offset : UInt = 0, length:UInt = 0) : Void {
-		if ( output == null) throw new openfl.errors.IOError("File is not opened for writing");
+		if ( output == null) throw new openfl.errors.IOError("File is not opened for write operations");
 		
 		var written = output.writeBytes( ba, offset, length );
 		
-		@:privateAccess fdesc.__update();
+		@:privateAccess fdesc.__update(this);
 	}
 	
 	public function writeByte(value:Int):Void{
-		if ( output == null) throw new openfl.errors.IOError("File is not opened for writing");
+		if ( output == null) throw new openfl.errors.IOError("File is not opened for write operations");
 		
 		output.writeByte(value);
 		
-		@:privateAccess fdesc.__update();
+		@:privateAccess fdesc.__update(this);
 	}
 	
 	/**
 	 * TODO : determine value encoding and transliterate?
 	 */
 	public function writeUTFBytes(value:String){
-		if ( output == null) throw new openfl.errors.IOError("File is not opened for writing");
+		if ( output == null) throw new openfl.errors.IOError("File is not opened for write operations");
 		var bytes = haxe.io.Bytes.ofString(value);
 		var written = output.writeBytes( bytes, 0, bytes.length );
 		
-		@:privateAccess fdesc.__update();
+		@:privateAccess fdesc.__update(this);
+		#if debug
+		trace("written " + bytes.length);
+		#end
 	}
 	
 	/**
 	 * TODO : determine value encoding and transliterate?
 	 */
 	public function writeUTF(value:String){
-		if ( output == null) throw new openfl.errors.IOError("File is not opened for writing");
+		if ( output == null) throw new openfl.errors.IOError("File is not opened for write operations");
 		var bytes = haxe.io.Bytes.ofString(value);
 		var written = output.writeBytes( bytes, 0, bytes.length );
-		@:privateAccess fdesc.__update();
+		@:privateAccess fdesc.__update(this);
 		
 	}
 	
