@@ -210,7 +210,7 @@ class File extends openfl.net.FileReference {
 	
 	public function getOSPath(){
 		#if switch
-			if( protocol!=null&&protocol.length>0)
+			if( protocol!=null&&protocol.length>0&& !__path.startsWith(protocol))
 				return protocol + __path;
 			else 
 				return __path;
