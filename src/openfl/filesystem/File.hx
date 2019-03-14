@@ -38,7 +38,7 @@ class File extends openfl.net.FileReference {
 		}
 		#end
 		
-		trace("File::new File "+path);
+		//trace("File::new File "+path);
 		this.__path = path;
 		
 		//happens with "empty" constructor invocation
@@ -50,7 +50,7 @@ class File extends openfl.net.FileReference {
 		
 		normalize();
 		
-		#if !switch //does not work on switch
+		#if !switch //does not work on switch by N. design
 		var fileInfo = sys.FileSystem.stat(__path);
 		if( fileInfo!=null){
 			creationDate = fileInfo.ctime;
@@ -234,6 +234,7 @@ class File extends openfl.net.FileReference {
 	
 	function __update( ?fs : openfl.filesystem.FileStream ){
 		#if !switch 
+		//stat( ) does nt work on switch by N design
 		var fileInfo = sys.FileSystem.stat( getOSPath() );
 		if( fileInfo!=null){
 			creationDate = fileInfo.ctime;
@@ -270,6 +271,7 @@ class File extends openfl.net.FileReference {
 		return "[Object File __path:" + nativePath +"]";
 	}
 	
+	//stat( ) does nt work on switch by N design
 	function dumpStats(){
 		var fileInfo = sys.FileSystem.stat( getOSPath() );
 		if ( fileInfo != null){
