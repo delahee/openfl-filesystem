@@ -8,9 +8,10 @@ class File extends openfl.net.FileReference {
 	//public
 	public var absolutePath(get,null):String;
 	public var exists(get, null):Bool;
-	public var isDirectory(get, null):Bool;
+	public var isDirectory(get, never ):Bool;
 	public var nativePath( get, null ) : String;
 	public var url( get, null ):String;
+	public var parent( get, null) : File;
 	
 	//////////////////////////////public statics
 	//public static var applicationDirectory : File = new File(lime.system.System.applicationDirectory);
@@ -19,6 +20,7 @@ class File extends openfl.net.FileReference {
 	static var __isInit = false;
 	public static var applicationDirectory : File = null;
 	public static var applicationStorageDirectory:File = null;
+	public static var separator : String = null;
 		
 	#if switch
 	var protocol : String = null;
@@ -46,6 +48,8 @@ class File extends openfl.net.FileReference {
 		#if switch
 		if ( path == "rom:/" ) return;
 		if ( path == "save:/" ) return;
+		if ( path.startsWith(protocol) )
+			path = path.replace(protocol, "");
 		#end
 		
 		normalize();
@@ -87,12 +91,11 @@ class File extends openfl.net.FileReference {
 		#end
 		
 		if ( f.__path == null ) f.__path = "";
-		if( sep == "/" )  f.__path = f.__path.replace("\\", sep);
-		if ( sep == "\\" ) f.__path = f.__path.replace("/", sep);
+		if( separator == "/" )  f.__path = f.__path.replace("\\", separator);
+		if( separator == "\\" ) f.__path = f.__path.replace("/", separator);
 		
-		if ( f.__path.endsWith(sep))
-			f.__path += sep;
-		f.isDirectory = true;
+		if ( f.__path.endsWith(separator))
+			f.__path += separator;
 			
 		return f;
 	}
@@ -101,38 +104,96 @@ class File extends openfl.net.FileReference {
 	public static function initStorageDir(){
 		//this call breaks on switch because it invokes profile logic
 		applicationStorageDirectory = __rawDir(lime.system.System.applicationStorageDirectory);
+		
+		#if switch
+		applicationStorageDirectory.__path = applicationStorageDirectory.__path.replace("save:/", "");
+		applicationStorageDirectory.protocol = "save:/";
+		#end
 	}
 	#end
 	
 	static function staticInit(){//do not call isDirectory within here
 		if ( !__isInit ){
-			//#if debug
-			//trace("File::StaticInit");
-			//#end
+			#if windows
+			separator = "\\";
+			#else 
+			separator = "/";
+			#end
+			
 			__isInit = true;
 			applicationDirectory = __rawDir(lime.system.System.applicationDirectory);
 			
 			#if !switch
 			//this call breaks on switch because it invokes profile logic
-			applicationStorageDirectory = __rawDir(lime.system.System.applicationStorageDirectory);
+			initStorageDir();
 			#end
+			
+			
+		}
+	}
+	
+	function isProtocol(){
+		if ( nativePath.endsWith(":") ) return true;//this is a protocol
+		if ( nativePath.endsWith(":/") ) return true;//this is a protocol
+		if ( nativePath.endsWith("://") ) return true;//this is a protocol
+		return false;
+	}
+	
+	function getBaseDirectory(){
+		if ( nativePath == separator ) return nativePath;
+		if ( isProtocol() ) return nativePath;//this is a protocol
+			
+		var ps = nativePath.split("/");
+		ps.pop();
+		return ps.join("/");
+	}
+	
+	function get_parent() : File {
+		if ( isDirectory ){
+			return resolvePath("..");
+		}
+		else {
+			return new File( getBaseDirectory() #if switch, protocol #end);
 		}
 	}
 	
 	function normalize(){
 		if ( __path == null ) return;
 		
-		if( sep == "/" )  __path = __path.replace("\\", sep);
-		if( sep == "\\" ) __path = __path.replace("/", sep);
+		if( separator == "/" )  __path = __path.replace("\\", separator);
+		if( separator == "\\" ) __path = __path.replace("/", separator);
 		
 		if ( isDirectory ){
-			if ( __path.charCodeAt(  __path.length - 1 ) != sep.charCodeAt(0) )
-				__path = __path + sep;
+			#if debug
+			trace( getOSPath()+" is dir?");
+			#end
+			if ( __path.charCodeAt(  __path.length - 1 ) != separator.charCodeAt(0) )
+				__path = __path + separator;
 		}
 	}
 	
 	public function createDirectory(){
-		sys.FileSystem.createDirectory( nativePath );
+		
+		
+		var folder = #if switch protocol + #end getBaseDirectory();
+		sys.FileSystem.createDirectory( folder );
+		
+		#if switch
+		commit();
+		#end
+	}
+	
+	#if switch
+	function commit(){
+		if ( protocol != null && protocol.startsWith( "save:" )){
+			var committed = lime.console.nswitch.SaveData.commit();
+		}
+	}
+	#end
+	
+	function _createDirectoryWithoutCommit(){
+		var folder = #if switch protocol + #end getBaseDirectory();
+		sys.FileSystem.createDirectory( folder );
 	}
 	
 	public function deleteDirectory(deleteDirectoryContents:Bool = false){
@@ -140,7 +201,7 @@ class File extends openfl.net.FileReference {
 			for ( f in getDirectoryListing() )
 				f.deleteDirectory(deleteDirectoryContents);
 		}
-		sys.FileSystem.deleteDirectory( nativePath );
+		sys.FileSystem.deleteDirectory( getOSPath() );
 	}
 	
 	public function getDirectoryListing() : Array<File>{
@@ -161,20 +222,20 @@ class File extends openfl.net.FileReference {
 	}
 	
 	public function get_absolutePath():String{
-		return sys.FileSystem.absolutePath( nativePath );
+		return sys.FileSystem.absolutePath( getOSPath() );
 	}
 	
 	//todo test
 	public function deleteFile(){
-		sys.FileSystem.deleteFile( nativePath);
+		sys.FileSystem.deleteFile( getOSPath());
 	}
 	
 	//todo test
 	public function deleteFileAsync(){
 		#if !cpp
-		sys.FileSystem.deleteFile( nativePath);
+		sys.FileSystem.deleteFile( getOSPath());
 		#else 
-		var path = nativePath;
+		var path = getOSPath();
 		cpp.vm.Thread.create(function(){
 			sys.FileSystem.deleteFile( path );
 		});
@@ -183,7 +244,8 @@ class File extends openfl.net.FileReference {
 	
 	public function resolvePath(path:String) : File {
 		//if native path is a dir, it has a trailing slash
-		return new File( nativePath + path);
+		var f = new File( nativePath + path #if switch, protocol #end );
+		return f;
 	}
 	
 
@@ -224,10 +286,11 @@ class File extends openfl.net.FileReference {
 	}
 	
 	function get_isDirectory(){
-		#if switch 
-		if ( nativePath == "rom://") return true;
-		if ( nativePath == "save://") return true;
-		#end
+		if ( isProtocol() ) return true;
+		
+		if ( !exists ) return false;
+		
+		if ( __path.endsWith( separator )) return true;
 		
 		return sys.FileSystem.isDirectory( getOSPath() );
 	}
@@ -256,14 +319,6 @@ class File extends openfl.net.FileReference {
 				f.close();
 			}
 		}
-		#end
-	}
-	
-	public static inline var sep = {
-		#if windows
-		"\\";
-		#else 
-		"/";
 		#end
 	}
 	

@@ -24,7 +24,7 @@ class FileStream{
 				try{
 					input = sys.io.File.read(f.getOSPath(), true);
 				}catch ( d:Dynamic ){
-					throw new openfl.errors.IOError("No such file "+f.nativePath);
+					throw new openfl.errors.IOError("No such file "+f.getOSPath());
 				}
 				
 				//#if debug
@@ -32,11 +32,14 @@ class FileStream{
 				//#end
 				
 			case WRITE:
+				
+				fdesc._createDirectoryWithoutCommit();
+				
 				try{
 					output = sys.io.File.write(f.getOSPath(), true);
 				}catch ( d:Dynamic ){
 					#if debug trace(d); #end
-					throw new openfl.errors.IOError("Unable to open file ");
+					throw new openfl.errors.IOError("Unable to open file "+f.getOSPath());
 				}
 				
 				//#if debug
@@ -48,7 +51,7 @@ class FileStream{
 					output = sys.io.File.append(f.getOSPath(), true);
 					output.seek( 0, sys.io.FileSeek.SeekEnd );
 				}catch ( d:Dynamic ){
-					throw new openfl.errors.IOError("No such file");
+					throw new openfl.errors.IOError("No such file " +f.getOSPath());
 				}
 				
 			case UPDATE:
@@ -185,5 +188,6 @@ class FileStream{
 		if ( input != null )
 			input.seek( val, sys.io.FileSeek.SeekCur );
 	}
+	
 }
 
