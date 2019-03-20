@@ -2,6 +2,7 @@ package openfl.filesystem;
 
 using StringTools;
 
+//note flash native files do not have trailing slashes!
 @:allow( openfl.filesystem.FileStream )
 class File extends openfl.net.FileReference {
 	
@@ -164,17 +165,15 @@ class File extends openfl.net.FileReference {
 		if( separator == "\\" ) __path = __path.replace("/", separator);
 		
 		if ( isDirectory ){
-			#if debug
-			trace( getOSPath()+" is dir?");
-			#end
-			if ( __path.charCodeAt(  __path.length - 1 ) != separator.charCodeAt(0) )
-				__path = __path + separator;
+			//#if debug
+			//trace( getOSPath()+" is dir?");
+			//#end
+			if ( __path.charCodeAt(  __path.length - 1 ) == separator.charCodeAt(0) )
+				__path = __path.substr(0,__path.length-1);
 		}
 	}
 	
 	public function createDirectory(){
-		
-		
 		var folder = #if switch protocol + #end getBaseDirectory();
 		sys.FileSystem.createDirectory( folder );
 		
@@ -243,8 +242,7 @@ class File extends openfl.net.FileReference {
 	}
 	
 	public function resolvePath(path:String) : File {
-		//if native path is a dir, it has a trailing slash
-		var f = new File( nativePath + path #if switch, protocol #end );
+		var f = new File( nativePath + separator + path #if switch, protocol #end );
 		return f;
 	}
 	
@@ -268,7 +266,7 @@ class File extends openfl.net.FileReference {
 	
 	//////////////////////////////private
 	function get_nativePath() return __path;
-	function get_url() return "file:///" + nativePath;
+	function get_url() return "file:///" + nativePath.replace("\\","/");
 	
 	public function getOSPath(){
 		#if switch
