@@ -175,6 +175,14 @@ class File extends openfl.net.FileReference {
 	
 	public function createDirectory(){
 		var folder = #if switch protocol + #end getBaseDirectory();
+		
+		if ( folder == "") return;
+		if ( folder == "/") return;
+		
+		#if debug
+		trace("creating " + folder);
+		#end
+		
 		sys.FileSystem.createDirectory( folder );
 		
 		#if switch
@@ -191,7 +199,16 @@ class File extends openfl.net.FileReference {
 	#end
 	
 	function _createDirectoryWithoutCommit(){
+		
 		var folder = #if switch protocol + #end getBaseDirectory();
+		
+		if ( folder == "") return;
+		if ( folder == "/") return;
+		
+		#if debug
+		trace("_createDirectoryWithoutCommit " + folder);
+		#end
+		
 		sys.FileSystem.createDirectory( folder );
 	}
 	
