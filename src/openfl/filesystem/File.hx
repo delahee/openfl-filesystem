@@ -241,12 +241,10 @@ class File extends openfl.net.FileReference {
 		return sys.FileSystem.absolutePath( getOSPath() );
 	}
 	
-	//todo test
 	public function deleteFile(){
 		sys.FileSystem.deleteFile( getOSPath());
 	}
 	
-	//todo test
 	public function deleteFileAsync(){
 		#if !cpp
 		sys.FileSystem.deleteFile( getOSPath());
@@ -313,6 +311,7 @@ class File extends openfl.net.FileReference {
 	function __update( ?fs : openfl.filesystem.FileStream ){
 		#if !switch 
 		//stat( ) does nt work on switch by N design
+		//could work in debug with filestampfordebug
 		var fileInfo = sys.FileSystem.stat( getOSPath() );
 		if( fileInfo!=null){
 			creationDate = fileInfo.ctime;

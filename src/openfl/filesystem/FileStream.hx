@@ -38,7 +38,7 @@ class FileStream{
 				try{
 					output = sys.io.File.write(f.getOSPath(), true);
 				}catch ( d:Dynamic ){
-					#if debug trace(d); #end
+					#if debug trace("fs::exception::"+d); #end
 					throw new openfl.errors.IOError("Unable to open file "+f.getOSPath());
 				}
 				
@@ -62,13 +62,16 @@ class FileStream{
 	
 	public function close(){
 		if (input!=null) input.close();
-		if (output != null) output.close();
+		if (output != null) {
+			output.flush();
+			output.close();
+		}
 		
 		#if switch
 		if ( output!=null && fdesc.protocol != null && fdesc.protocol.startsWith( "save:" )){
 			var committed = lime.console.nswitch.SaveData.commit();
 			#if debug
-			trace("NSwitch:Commit! "+committed);
+			trace("NSwitch:Commit! "+committed+" > "+fdesc.getOSPath());
 			#end
 		}
 		#end
@@ -111,9 +114,14 @@ class FileStream{
 	public function writeBytes(ba:openfl.utils.ByteArray, offset : UInt = 0, length:UInt = 0) : Void {
 		if ( output == null) throw new openfl.errors.IOError("File is not opened for write operations");
 		
+		if ( length == 0 ) length = ba.length;
+		
 		var written = output.writeBytes( ba, offset, length );
 		
 		@:privateAccess fdesc.__update(this);
+		#if debug
+		//trace("written " + written + " > "+length);
+		#end
 	}
 	
 	public function writeByte(value:Int):Void{
@@ -122,6 +130,9 @@ class FileStream{
 		output.writeByte(value);
 		
 		@:privateAccess fdesc.__update(this);
+		#if debug
+		//trace("written 1");
+		#end
 	}
 	
 	/**
