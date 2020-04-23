@@ -71,7 +71,7 @@ class FileStream{
 		if ( output!=null && fdesc.protocol != null && fdesc.protocol.startsWith( "save:" )){
 			var committed = lime.console.nswitch.SaveData.commit();
 			#if debug
-			trace("NSwitch:Commit! "+committed+" > "+fdesc.getOSPath());
+			//trace("NSwitch:Commit! "+committed+" > "+fdesc.getOSPath());
 			#end
 		}
 		#end
@@ -145,7 +145,7 @@ class FileStream{
 		
 		@:privateAccess fdesc.__update(this);
 		#if debug
-		trace("written " + bytes.length);
+		//trace("written " + bytes.length);
 		#end
 	}
 	

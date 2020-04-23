@@ -71,12 +71,12 @@ class File extends openfl.net.FileReference {
 	static var _ : Dynamic = {
 		#if console
 			#if debug 
-			trace("static init called deferred");
+			//trace("static init called deferred");
 			#end
 			haxe.Timer.delay( staticInit, 1 );
 		#else 
 			#if debug 
-			trace("static init called direct");
+			//trace("static init called direct");
 			#end
 			staticInit();	
 		#end
@@ -180,7 +180,7 @@ class File extends openfl.net.FileReference {
 		if ( folder == "/") return;
 		
 		#if debug
-		trace("creating " + folder);
+		//trace("creating " + folder);
 		#end
 		
 		sys.FileSystem.createDirectory( folder );
@@ -206,7 +206,7 @@ class File extends openfl.net.FileReference {
 		if ( folder == "/") return;
 		
 		#if debug
-		trace("_createDirectoryWithoutCommit " + folder);
+		//trace("_createDirectoryWithoutCommit " + folder);
 		#end
 		
 		sys.FileSystem.createDirectory( folder );
@@ -344,7 +344,7 @@ class File extends openfl.net.FileReference {
 	function dumpStats(){
 		var fileInfo = sys.FileSystem.stat( getOSPath() );
 		if ( fileInfo != null){
-			trace("data for " + getOSPath());
+			//trace("data for " + getOSPath());
 			trace( fileInfo.ctime );
 			trace( fileInfo.mtime );
 			trace( fileInfo.size );
