@@ -41,19 +41,22 @@ class File extends openfl.net.FileReference {
 		}
 		#end
 		
-		//trace("File::new File "+path);
 		this.__path = path;
 		
 		//happens with "empty" constructor invocation
-		if ( path == "" ) return;
+		if ( __path == "" ) return;
 		#if switch
-		if ( path == "rom:/" ) return;
-		if ( path == "save:/" ) return;
-		if ( path.startsWith(protocol) )
-			path = path.replace(protocol, "");
+		if ( __path == "rom:/" ) return;
+		if ( __path == "save:/" ) return;
+		if ( __path.startsWith(protocol) )
+			__path = __path.replace(protocol, "");
 		#end
 		
 		normalize();
+		
+		#if debug
+		//trace("File::new File " + __path);
+		#end
 		
 		#if !switch //does not work on switch by N. design
 		var fileInfo = sys.FileSystem.stat(__path);
@@ -141,12 +144,14 @@ class File extends openfl.net.FileReference {
 	}
 	
 	function getBaseDirectory(){
+		var nativePath = getOSPath();//weird it seems we tried to access the field not the property
 		if ( nativePath == separator ) return nativePath;
 		if ( isProtocol() ) return nativePath;//this is a protocol
-			
-		var ps = nativePath.split("/");
+		
+		
+		var ps = nativePath.split(separator);
 		ps.pop();
-		return ps.join("/");
+		return ps.join(separator);
 	}
 	
 	function get_parent() : File {
@@ -178,6 +183,7 @@ class File extends openfl.net.FileReference {
 		
 		if ( folder == "") return;
 		if ( folder == "/") return;
+		if ( folder == separator) return;
 		
 		#if debug
 		//trace("creating " + folder);
@@ -202,11 +208,15 @@ class File extends openfl.net.FileReference {
 		
 		var folder = #if switch protocol + #end getBaseDirectory();
 		
+		#if debug
+		trace("checking if have to create dir for " + getBaseDirectory());
+		#end
 		if ( folder == "") return;
 		if ( folder == "/") return;
+		if ( folder == separator) return;
 		
 		#if debug
-		//trace("_createDirectoryWithoutCommit " + folder);
+		trace("_createDirectoryWithoutCommit " + folder);
 		#end
 		
 		sys.FileSystem.createDirectory( folder );

@@ -2,6 +2,14 @@ package openfl.filesystem;
 
 using StringTools;
 
+private class Path {
+	public static function getBaseDirectory(str) : String {
+		var ps = str.split("/");
+		ps.pop();
+		return ps.join("/");
+	}
+}
+
 @:allow( openfl.filesystem.File )
 class FileStream{
 	/////////////private
@@ -35,11 +43,16 @@ class FileStream{
 				
 				fdesc._createDirectoryWithoutCommit();
 				
+				//trace( fdesc.getOSPath());
+				//trace( @:privateAccess  fdesc.getBaseDirectory() );
+				
 				try{
-					output = sys.io.File.write(f.getOSPath(), true);
+					var path = fdesc.getOSPath();
+					//trace("writing " + path);
+					output = sys.io.File.write( path, true);
 				}catch ( d:Dynamic ){
 					#if debug trace("fs::exception::"+d); #end
-					throw new openfl.errors.IOError("Unable to open file "+f.getOSPath());
+					throw new openfl.errors.IOError("Unable to open file for writing "+fdesc.getOSPath());
 				}
 				
 				//#if debug
