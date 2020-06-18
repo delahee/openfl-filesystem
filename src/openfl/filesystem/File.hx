@@ -205,19 +205,11 @@ class File extends openfl.net.FileReference {
 	#end
 	
 	function _createDirectoryWithoutCommit(){
-		
 		var folder = #if switch protocol + #end getBaseDirectory();
 		
-		#if debug
-		trace("checking if have to create dir for " + getBaseDirectory());
-		#end
 		if ( folder == "") return;
 		if ( folder == "/") return;
 		if ( folder == separator) return;
-		
-		#if debug
-		trace("_createDirectoryWithoutCommit " + folder);
-		#end
 		
 		sys.FileSystem.createDirectory( folder );
 	}
@@ -278,8 +270,6 @@ class File extends openfl.net.FileReference {
 	public function openWithDefaultApplication(){
 		throw "[openWithDefaultApplication]not implemented";
 	}
-	
-	
 		
 	public function browseForOpen(hint:String, filters : Array<Dynamic> ){
 		throw "[browseForOpen]not implemented";
@@ -320,7 +310,7 @@ class File extends openfl.net.FileReference {
 	
 	function __update( ?fs : openfl.filesystem.FileStream ){
 		#if !switch 
-		//stat( ) does nt work on switch by N design
+		//stat( ) does nt work on switch by N. design
 		//could work in debug with filestampfordebug
 		var fileInfo = sys.FileSystem.stat( getOSPath() );
 		if( fileInfo!=null){

@@ -35,20 +35,12 @@ class FileStream{
 					throw new openfl.errors.IOError("No such file "+f.getOSPath());
 				}
 				
-				//#if debug
-				//fdesc.dumpStats();
-				//#end
-				
 			case WRITE:
 				
 				fdesc._createDirectoryWithoutCommit();
 				
-				//trace( fdesc.getOSPath());
-				//trace( @:privateAccess  fdesc.getBaseDirectory() );
-				
 				try{
 					var path = fdesc.getOSPath();
-					//trace("writing " + path);
 					output = sys.io.File.write( path, true);
 				}catch ( d:Dynamic ){
 					#if debug trace("fs::exception::"+d); #end
@@ -114,9 +106,7 @@ class FileStream{
 		
 		if ( rem < length ) throw new openfl.errors.EOFError ("File is not opened for read operations");
 		
-		//#if debug trace("tasked to read "+length); #end
 		var b = input.read(length);
-		//#if debug  trace("extracted " + b.length); #end
 		var nba = openfl.utils.ByteArray.fromBytes( b );
 		
 		ba.writeBytes( nba );
@@ -132,9 +122,6 @@ class FileStream{
 		var written = output.writeBytes( ba, offset, length );
 		
 		@:privateAccess fdesc.__update(this);
-		#if debug
-		//trace("written " + written + " > "+length);
-		#end
 	}
 	
 	public function writeByte(value:Int):Void{
@@ -143,9 +130,6 @@ class FileStream{
 		output.writeByte(value);
 		
 		@:privateAccess fdesc.__update(this);
-		#if debug
-		//trace("written 1");
-		#end
 	}
 	
 	/**
@@ -157,9 +141,6 @@ class FileStream{
 		var written = output.writeBytes( bytes, 0, bytes.length );
 		
 		@:privateAccess fdesc.__update(this);
-		#if debug
-		//trace("written " + bytes.length);
-		#end
 	}
 	
 	/**
