@@ -10,7 +10,7 @@ class File extends openfl.net.FileReference {
 	public var absolutePath(get,null):String;
 	public var exists(get, null):Bool;
 	public var isDirectory(get, never ):Bool;
-	public var nativePath( get, null ) : String;
+	public var nativePath( get, null ) : String;//nativePath does not incorporate protocol
 	public var url( get, null ):String;
 	public var parent( get, null) : File;
 	
@@ -137,17 +137,18 @@ class File extends openfl.net.FileReference {
 	}
 	
 	function isProtocol(){
+		var nativePath = get_nativePath();
 		if ( nativePath.endsWith(":") ) return true;//this is a protocol
 		if ( nativePath.endsWith(":/") ) return true;//this is a protocol
 		if ( nativePath.endsWith("://") ) return true;//this is a protocol
 		return false;
 	}
 	
+	//returns the base directory without the protocol...
 	function getBaseDirectory(){
-		var nativePath = getOSPath();//weird it seems we tried to access the field not the property
+		var nativePath = get_nativePath();
 		if ( nativePath == separator ) return nativePath;
 		if ( isProtocol() ) return nativePath;//this is a protocol
-		
 		
 		var ps = nativePath.split(separator);
 		ps.pop();
@@ -211,6 +212,9 @@ class File extends openfl.net.FileReference {
 		if ( folder == "/") return;
 		if ( folder == separator) return;
 		
+		#if debug
+		trace("trying to create :" + folder);
+		#end
 		sys.FileSystem.createDirectory( folder );
 	}
 	
