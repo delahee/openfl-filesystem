@@ -212,9 +212,9 @@ class File extends openfl.net.FileReference {
 		if ( folder == "/") return;
 		if ( folder == separator) return;
 		
-		#if debug
-		trace("trying to create :" + folder);
-		#end
+		//#if debug
+		//trace("trying to create :" + folder);
+		//#end
 		sys.FileSystem.createDirectory( folder );
 	}
 	
